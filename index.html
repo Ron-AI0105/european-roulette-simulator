@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10151b">
+<title>European Roulette • Play Chips</title>
+<style>
+  /* ---------- Theme and responsive shell ---------- */
+  :root {
+    color-scheme: dark;
+    --bg: #0b1016;
+    --panel: #141c25;
+    --line: #2b3541;
+    --text: #f0f3f6;
+    --muted: #a7b2c0;
+    --gold: #e9c879;
+    --green: #46d4a0;
+    --red: #ff9299;
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-width: 280px;
+    background:
+      radial-gradient(ellipse at 12% 0%, #20372c66, transparent 48%),
+      radial-gradient(ellipse at 90% 30%, #39302033, transparent 50%),
+      var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+  button:disabled { cursor: not-allowed; }
+  button:focus-visible, summary:focus-visible {
+    outline: 3px solid #87ceff;
+    outline-offset: 3px;
+    z-index: 5;
+  }
+  [hidden] { display: none !important; }
+  h1, h2, h3, p { margin: 0; }
+  h2 { font-size: 19px; }
+  .app { max-width: 1250px; margin: auto; padding: 28px 24px 32px; }
+  .topbar, .brand, .panel-heading, .controls, .chip-rack {
+    display: flex; align-items: center;
+  }
+  .topbar { justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+  .brand { gap: 13px; }
+  .brand svg { color: var(--gold); flex-shrink: 0; }
+  h1 { font-size: clamp(21px, 3vw, 29px); letter-spacing: -.8px; }
+  .subtitle { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .play-tag {
+    border: 1px solid #3b4538; background: #213323;
+    color: #c3e3bc; padding: 7px 12px; border-radius: 99px;
+    font-size: 11px; font-weight: 800; letter-spacing: 1px; white-space: nowrap;
+  }
+  .wallet { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .stat {
+    padding: 15px 20px; border: 1px solid var(--line); border-radius: 15px;
+    background: #141c25bb; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+  }
+  .stat-label { color: var(--muted); font-size: 12px; }
+  .stat-value { font-size: 25px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat:first-child .stat-value { color: var(--gold); }
+  .layout { display: grid; grid-template-columns: minmax(300px, .85fr) minmax(0, 1.45fr); gap: 20px; align-items: start; }
+  .panel {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: linear-gradient(145deg, #19232d, var(--panel));
+    box-shadow: 0 16px 45px #0002; overflow: hidden;
+  }
+  .wheel-panel { padding: 20px; }
+  .panel-heading { justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+  .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--gold); margin-bottom: 5px; }
+  .live-tag {
+    color: var(--muted); border: 1px solid var(--line); border-radius: 99px;
+    padding: 4px 9px; font-size: 11px; white-space: nowrap;
+  }
+  .live-tag::before { content: ""; display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; margin-right: 6px; }
+  .wheel-wrap { max-width: 370px; margin: 2px auto 12px; }
+  #wheel { display: block; width: 100%; aspect-ratio: 1; }
+  .outcome {
+    display: flex; align-items: center; gap: 14px; padding: 15px;
+    background: #0d141c; border: 1px solid var(--line); border-radius: 14px;
+    min-height: 96px;
+  }
+  .result-pocket {
+    width: 58px; height: 66px; flex-shrink: 0; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #26313e; border: 1px solid #465364;
+  }
+  .result-pocket.red { background: #8b2936; border-color: #d45b67; }
+  .result-pocket.black { background: #11151b; border-color: #667385; }
+  .result-pocket.green { background: #11604b; border-color: #44bd94; }
+  #winning-number { font-size: 29px; line-height: 1.1; font-weight: 850; }
+  #winning-color { font-size: 9px; letter-spacing: 1.2px; margin-top: 5px; }
+  #result-title { font-size: 14px; font-weight: 750; margin-bottom: 3px; }
+  #result-detail { color: var(--muted); font-size: 12px; }
+  .positive { color: var(--green) !important; }
+  .negative { color: var(--red) !important; }
+  .history-header { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 12px; }
+  .history-header h3 { font-size: 13px; }
+  .history-header span { font-size: 10px; color: var(--muted); }
+  .history { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px; }
+  .history-empty { color: var(--muted); font-size: 12px; padding: 8px 0; }
+  .history-item { flex: 1; text-align: center; min-width: 0; }
+  .history-number {
+    display: grid; place-items: center; width: 40px; height: 40px; margin: auto;
+    border-radius: 50%; border: 1px solid #637084; background: #10151c; font-weight: 800;
+  }
+  .history-item.red .history-number { background: #8b2936; border-color: #d45b67; }
+  .history-item.green .history-number { background: #11604b; border-color: #44bd94; }
+  .history-item:first-child .history-number { box-shadow: 0 0 0 3px #e9c87933; }
+  .history-color { display: block; font-size: 8px; color: var(--muted); margin-top: 5px; letter-spacing: .7px; }
+
+  /* ---------- Chip selector and betting felt ---------- */
+  .table-panel { padding: 22px; }
+  .instruction { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .chip-rack { gap: 12px; margin: 18px 0; flex-wrap: wrap; }
+  .chip {
+    width: 52px; height: 52px; border: 3px dashed #9caaba; border-radius: 50%;
+    background: #25313f; font-weight: 850; font-size: 13px;
+    box-shadow: inset 0 0 0 3px #121923, 0 3px 8px #0003;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+  }
+  .chip[data-value="10"] { border-color: #88c3e9; background: #24465e; }
+  .chip[data-value="50"] { border-color: #daa5ee; background: #4a315f; }
+  .chip[data-value="100"] { border-color: #f1c676; background: #5a4425; }
+  .chip[aria-pressed="true"] {
+    outline: 2px solid var(--gold); outline-offset: 4px;
+    transform: translateY(-2px);
+  }
+  .chip:disabled { opacity: .4; }
+  .chip-note { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .felt {
+    background: linear-gradient(140deg, #123b30, #0d2924);
+    padding: 10px; border: 1px solid #356051; border-radius: 14px;
+  }
+  .numbers { display: grid; grid-template-columns: .9fr repeat(12, 1fr); grid-template-rows: repeat(3, 63px); gap: 3px; }
+  .bet-cell {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    min-width: 0; padding: 8px 3px 16px; border-radius: 5px;
+    border: 1px solid #ffffff2b; background: #173e32;
+    font-weight: 750; transition: filter .12s, box-shadow .12s;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .bet-cell:hover:not(:disabled) { filter: brightness(1.25); }
+  .bet-cell:active:not(:disabled) { filter: brightness(1.5); }
+  .number-cell { grid-column: var(--col); grid-row: var(--row); font-size: 17px; }
+  .number-cell.red, .outside-cell.red { background: #812c38; }
+  .number-cell.black, .outside-cell.black { background: #141c25; }
+  .number-cell.green { background: #176c51; }
+  .zero-cell { grid-column: 1; grid-row: 1 / span 3; font-size: 23px; }
+  .bet-cell.has-bet { border-color: var(--gold); box-shadow: inset 0 0 0 1px #e9c87955; }
+  .bet-cell.winner { box-shadow: inset 0 0 0 2px var(--gold), 0 0 12px #e9c87922; }
+  .bet-cell:disabled { cursor: wait; }
+  .bet-token {
+    position: absolute; bottom: 3px; right: 3px; min-width: 18px;
+    border-radius: 8px; background: var(--gold); color: #231a09;
+    padding: 1px 4px; line-height: 1.3; font-size: 9px; font-weight: 900;
+    box-shadow: 0 1px 3px #0005; pointer-events: none;
+  }
+  .group-bets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 5px; }
+  .group-bets .bet-cell { min-height: 48px; font-size: 11px; }
+  .outside-bets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 5px; }
+  .outside-cell { min-height: 52px; font-size: 11px; }
+  .board-caption { margin-top: 10px; font-size: 10px; color: var(--muted); }
+  .board-caption::before { content: ""; width: 7px; height: 7px; display: inline-block; border: 1px solid var(--gold); margin-right: 5px; }
+  .status {
+    min-height: 48px; margin: 14px 0 8px; color: var(--muted);
+    font-size: 12px; display: flex; align-items: center;
+  }
+  .status.error { color: var(--red); }
+  .controls { gap: 10px; flex-wrap: wrap; }
+  .action {
+    min-height: 49px; border-radius: 11px; padding: 11px 18px;
+    border: 1px solid var(--line); font-weight: 800; font-size: 13px;
+    background: #26323f;
+  }
+  .action:disabled { opacity: .42; }
+  .action:hover:not(:disabled) { filter: brightness(1.1); }
+  .spin { flex: 1; min-width: 140px; background: linear-gradient(135deg, #f2d58f, #dcb15c); border-color: #e9c879; color: #241c0c; }
+  #spin:disabled { opacity: 1; cursor: default; }
+  .spin.busy::before {
+    content: ""; width: 12px; height: 12px; display: inline-block; margin-right: 9px;
+    border: 2px solid #241c0c44; border-top-color: #241c0c;
+    border-radius: 50%; vertical-align: -2px; animation: loading .7s linear infinite;
+  }
+  @keyframes loading { to { transform: rotate(360deg); } }
+  .busted {
+    border: 1px solid #6b4e2e; background: #3d2b1b;
+    border-radius: 12px; padding: 14px; margin-top: 15px;
+  }
+  .busted p { font-size: 12px; color: #f1d6b1; margin-bottom: 10px; }
+  .busted button { width: 100%; background: var(--gold); color: #241c0c; }
+  details { margin-top: 20px; border: 1px solid var(--line); border-radius: 12px; background: #111922; }
+  summary { padding: 13px 16px; color: var(--muted); cursor: pointer; font-size: 12px; }
+  .rules { padding: 0 16px 16px; color: var(--muted); font-size: 12px; }
+  .rules table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .rules th, .rules td { text-align: left; padding: 7px 4px; border-bottom: 1px solid var(--line); }
+  .rules th { color: var(--text); }
+  .rules p + p { margin-top: 7px; }
+  footer { text-align: center; color: var(--muted); font-size: 10px; margin-top: 20px; }
+
+  @media (max-width: 1000px) {
+    .layout { grid-template-columns: 1fr; }
+    .wheel-panel { display: grid; grid-template-columns: minmax(220px, .85fr) 1fr; gap: 0 24px; }
+    .wheel-panel > .panel-heading { grid-column: 1 / -1; }
+    .wheel-wrap { grid-column: 1; grid-row: 2 / span 2; width: 100%; max-width: 290px; margin: 0 auto; }
+    .outcome { align-self: center; }
+    .history-section { align-self: start; }
+    .history-header { margin-top: 10px; }
+  }
+  @media (max-width: 600px) {
+    .app { padding: 18px 12px 24px; }
+    .topbar { gap: 8px; margin-bottom: 18px; }
+    .brand { gap: 9px; }
+    .brand svg { width: 32px; height: 32px; }
+    .play-tag { padding: 5px 7px; font-size: 9px; letter-spacing: .5px; }
+    .wallet { gap: 9px; margin-bottom: 12px; }
+    .stat { padding: 11px 13px; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .stat-value { font-size: 24px; }
+    .layout { gap: 12px; }
+    .wheel-panel { display: block; padding: 17px; }
+    .wheel-wrap { max-width: 255px; margin: 0 auto 12px; }
+    .history-header { margin-top: 18px; }
+    .table-panel { padding: 16px 12px 12px; overflow: visible; }
+    .chip-rack { gap: 13px; margin: 17px 4px 20px; }
+    .chip-note { flex-basis: 100%; margin: 0; }
+    .felt { padding: 7px; }
+    .numbers { grid-template-columns: repeat(3, 1fr); grid-template-rows: 44px repeat(12, 43px); gap: 4px; }
+    .number-cell { grid-column: var(--mobile-col); grid-row: var(--mobile-row); font-size: 18px; }
+    .zero-cell { grid-column: 1 / -1; grid-row: 1; }
+    .number-cell { padding-bottom: 8px; }
+    .bet-token { font-size: 10px; }
+    .group-bets .bet-cell { min-height: 47px; font-size: 10px; }
+    .outside-bets { grid-template-columns: repeat(2, 1fr); }
+    .outside-cell { order: var(--mobile-order); min-height: 46px; font-size: 12px; }
+    .controls {
+      position: sticky; bottom: 8px;
+      padding: 10px; margin: 0 -3px;
+      background: #101820f2; border: 1px solid var(--line);
+      border-radius: 15px; z-index: 10;
+      backdrop-filter: blur(12px);
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .action { padding: 11px 14px; }
+    footer { margin-bottom: env(safe-area-inset-bottom); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="24" cy="24" r="21" stroke="currentColor" stroke-width="2"/>
+        <circle cx="24" cy="24" r="15" stroke="currentColor" stroke-dasharray="3 3"/>
+        <path d="M24 8v10m0 12v10M8 24h10m12 0h10M13 13l7 7m8 8 7 7M13 35l7-7m8-8 7-7" stroke="currentColor" stroke-width="2"/>
+        <circle cx="24" cy="24" r="5" fill="currentColor"/>
+      </svg>
+      <div>
+        <h1>European Roulette</h1>
+        <p class="subtitle">Automatic rounds · Offline preview, not a shared online table.</p>
+      </div>
+    </div>
+    <span class="play-tag">PLAY CHIPS ONLY</span>
+  </header>
+
+  <section class="wallet" aria-label="Chip balances">
+    <div class="stat">
+      <span class="stat-label">Available balance</span>
+      <span class="stat-value" id="balance">1,000</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">On the table</span>
+      <span class="stat-value" id="total-bet">0</span>
+    </div>
+  </section>
+
+  <main class="layout">
+    <section class="panel wheel-panel" aria-labelledby="wheel-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">THE WHEEL</p>
+          <h2 id="wheel-heading">Let it roll.</h2>
+        </div>
+        <span class="live-tag" id="wheel-state">Ready</span>
+      </div>
+
+      <div class="wheel-wrap">
+        <canvas id="wheel" width="600" height="600" role="img"
+          aria-label="European roulette wheel with 37 pockets and a single zero">
+          European roulette wheel: numbers 0 through 36.
+        </canvas>
+      </div>
+
+      <div class="outcome">
+        <div class="result-pocket" id="result-pocket">
+          <span id="winning-number">—</span>
+          <span id="winning-color">READY</span>
+        </div>
+        <div>
+          <p id="result-title">Your next lucky number?</p>
+          <p id="result-detail">Place your chips, then spin the wheel.</p>
+        </div>
+      </div>
+
+      <div class="history-section">
+        <div class="history-header">
+          <h3>Last 5 results</h3>
+          <span>Newest first</span>
+        </div>
+        <ol id="history" class="history" aria-label="Last five winning numbers, newest first">
+          <li class="history-empty">Your first spin starts the story.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="panel table-panel" aria-labelledby="table-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">PLACE YOUR BETS</p>
+          <h2 id="table-heading">Choose a chip. Pick a spot.</h2>
+          <p class="instruction">Tap again to stack chips on the same bet.</p>
+        </div>
+      </div>
+
+      <div class="chip-rack" role="group" aria-label="Select chip value">
+        <button type="button" class="chip" data-value="1" aria-pressed="false" aria-label="Select 1-chip denomination">1</button>
+        <button type="button" class="chip" data-value="10" aria-pressed="true" aria-label="Select 10-chip denomination">10</button>
+        <button type="button" class="chip" data-value="50" aria-pressed="false" aria-label="Select 50-chip denomination">50</button>
+        <button type="button" class="chip" data-value="100" aria-pressed="false" aria-label="Select 100-chip denomination">100</button>
+        <span class="chip-note" id="chip-note">Selected: 10 chips</span>
+      </div>
+
+      <div class="felt" id="betting-board" aria-label="Roulette betting board">
+        <div class="numbers" id="number-bets" role="group" aria-label="Straight-up number bets, paying 35 to 1"></div>
+        <div class="group-bets" id="dozen-bets" role="group" aria-label="Dozen bets, paying 2 to 1"></div>
+        <div class="group-bets" id="column-bets" role="group" aria-label="Column bets, paying 2 to 1"></div>
+        <div class="outside-bets" id="outside-bets" role="group" aria-label="Even-money outside bets, paying 1 to 1"></div>
+      </div>
+      <p class="board-caption">Gold outlines show the last winning spots.</p>
+
+      <p class="status" id="status" role="status" aria-live="polite" aria-atomic="true">
+        Betting is open. The wheel spins automatically; bets are never repeated.
+      </p>
+
+      <div class="controls">
+        <button type="button" class="action" id="clear-bets" disabled>Clear Bets</button>
+        <button type="button" class="action" id="pause-table" aria-pressed="false">Pause</button>
+        <button type="button" class="action spin" id="spin" disabled aria-label="Automatic round countdown">Bets close in 20s</button>
+      </div>
+      <p class="instruction">20s betting · 6s spin · 5s results. Pause controls this offline preview only.</p>
+
+      <div class="busted" id="busted" hidden>
+        <p>You're out of play-chips. Start fresh with another 1,000.</p>
+        <button type="button" class="action" id="reset">Reset to 1,000</button>
+      </div>
+
+      <details>
+        <summary>Payouts &amp; how to play</summary>
+        <div class="rules">
+          <table>
+            <thead><tr><th scope="col">Bet</th><th scope="col">Profit odds</th></tr></thead>
+            <tbody>
+              <tr><td>Single number, including 0</td><td>35:1</td></tr>
+              <tr><td>Dozen or column</td><td>2:1</td></tr>
+              <tr><td>Red / Black, Even / Odd</td><td>1:1</td></tr>
+              <tr><td>Low (1–18) / High (19–36)</td><td>1:1</td></tr>
+            </tbody>
+          </table>
+          <p>Winning bets return your stake <strong>plus</strong> the listed profit.
+            A winning 10-chip number bet returns 360 chips; a winning 10-chip red bet returns 20.</p>
+          <p>Chips are deducted when placed. Clear Bets refunds bets while betting is open.
+            Betting closes automatically after 20 seconds, followed by a 6-second spin
+            and 5-second results period. Bets are removed after settlement and never repeated.</p>
+          <p>There are 37 pockets: 0–36. Zero is green, not red, black, odd, even, high, or low.
+            When zero lands, all outside, dozen, and column bets lose. No La Partage or En Prison.</p>
+          <p>Columns cover 1,4,7…34; 2,5,8…35; and 3,6,9…36.
+            Each spin is independent. This version supports the bet types listed above.</p>
+          <p>This preview is entirely offline: no real accounts, multiplayer, money,
+            tracking, or network requests. Every browser has its own table.
+            Real shared accounts and rounds require the separate server package.</p>
+          <p>Timings are configurable design defaults, not an industry standard.
+            Pause freezes this preview's betting timer; you may still place or clear bets.
+            Background browser suspension can delay offline rounds.
+            Reloading starts a fresh game.</p>
+        </div>
+      </details>
+    </section>
+  </main>
+  <footer>37 pockets · One green zero · Unlimited imaginary possibilities</footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Rules and single source of truth ----------
+  const INITIAL_BALANCE = 1000;
+  // Local preview timings only. The online server owns the actual shared clock.
+  const TIMING = Object.freeze({ betting: 20000, spinning: 6000, results: 5000 });
+  const TAU = Math.PI * 2;
+  const WHEEL_ORDER = [
+    0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13,
+    36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14,
+    31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+  ];
+  const RED_NUMBERS = new Set([
+    1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23,
+    25, 27, 30, 32, 34, 36
+  ]);
+  const DENOMINATIONS = [1, 10, 50, 100];
+  const format = new Intl.NumberFormat("en-US");
+  const money = value => format.format(value);
+  const colorOf = number => number === 0 ? "green" : RED_NUMBERS.has(number) ? "red" : "black";
+  const mod = (value, divisor) => ((value % divisor) + divisor) % divisor;
+  const easeOut = t => 1 - Math.pow(1 - t, 4);
+  const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${money(Math.abs(value))}`;
+
+  const state = {
+    balance: INITIAL_BALANCE,
+    selectedChip: 10,
+    bets: new Map(),
+    spinning: false,
+    lastWinner: null,
+    history: [],
+    round: 0,
+    phase: "betting",
+    deadline: performance.now() + TIMING.betting,
+    paused: false,
+    pausedRemaining: TIMING.betting
+  };
+
+  const $ = id => document.getElementById(id);
+  const ui = {
+    balance: $("balance"), total: $("total-bet"),
+    board: $("betting-board"), chips: [...document.querySelectorAll(".chip")],
+    chipNote: $("chip-note"), spin: $("spin"), clear: $("clear-bets"),
+    status: $("status"), history: $("history"), busted: $("busted"),
+    reset: $("reset"), pause: $("pause-table"),
+    wheelState: $("wheel-state"), pocket: $("result-pocket"),
+    number: $("winning-number"), color: $("winning-color"),
+    resultTitle: $("result-title"), resultDetail: $("result-detail")
+  };
+
+  // Each bet defines its own winning predicate and PROFIT odds.
+  // Settlement adds (odds + 1) times the stake, because placement already debited it.
+  const definitions = new Map();
+  const buttons = new Map();
+
+  function registerBet(container, definition, classes, position = {}) {
+    definitions.set(definition.id, definition);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `bet-cell ${classes}`;
+    button.dataset.bet = definition.id;
+
+    for (const [property, value] of Object.entries(position)) {
+      button.style.setProperty(property, value);
+    }
+
+    const label = document.createElement("span");
+    label.textContent = definition.label;
+    const token = document.createElement("span");
+    token.className = "bet-token";
+    token.hidden = true;
+    token.setAttribute("aria-hidden", "true");
+    button.append(label, token);
+    container.append(button);
+    buttons.set(definition.id, { button, token });
+  }
+
+  function buildBoard() {
+    for (let number = 0; number <= 36; number++) {
+      registerBet($("number-bets"), {
+        id: `number-${number}`,
+        label: String(number),
+        name: `${number}, ${colorOf(number)}`,
+        odds: 35,
+        wins: result => result === number
+      }, `number-cell ${colorOf(number)} ${number === 0 ? "zero-cell" : ""}`, {
+        "--col": number === 0 ? 1 : Math.ceil(number / 3) + 1,
+        "--row": number === 0 ? 1 : 3 - ((number - 1) % 3),
+        "--mobile-col": number === 0 ? 1 : ((number - 1) % 3) + 1,
+        "--mobile-row": number === 0 ? 1 : Math.floor((number - 1) / 3) + 2
+      });
+    }
+
+    for (let group = 1; group <= 3; group++) {
+      const low = (group - 1) * 12 + 1;
+      const high = group * 12;
+      registerBet($("dozen-bets"), {
+        id: `dozen-${group}`, label: `${low}–${high}`, name: `Dozen ${low} through ${high}`,
+        odds: 2, wins: number => number >= low && number <= high
+      }, "dozen-cell");
+
+      registerBet($("column-bets"), {
+        id: `column-${group}`, label: `COLUMN ${group}`, name: `Column ${group}`,
+        odds: 2, wins: number => number !== 0 && ((number - 1) % 3) + 1 === group
+      }, "column-cell");
+    }
+
+    const outside = [
+      { id: "low", label: "1–18", name: "Low, 1 through 18", wins: n => n >= 1 && n <= 18, order: 1 },
+      { id: "even", label: "EVEN", name: "Even", wins: n => n !== 0 && n % 2 === 0, order: 3 },
+      { id: "red", label: "RED", name: "Red", wins: n => RED_NUMBERS.has(n), order: 5 },
+      { id: "black", label: "BLACK", name: "Black", wins: n => n !== 0 && !RED_NUMBERS.has(n), order: 6 },
+      { id: "odd", label: "ODD", name: "Odd", wins: n => n !== 0 && n % 2 === 1, order: 4 },
+      { id: "high", label: "19–36", name: "High, 19 through 36", wins: n => n >= 19 && n <= 36, order: 2 }
+    ];
+    outside.forEach(bet => registerBet(
+      $("outside-bets"), { ...bet, odds: 1 },
+      `outside-cell ${bet.id === "red" || bet.id === "black" ? bet.id : ""}`,
+      { "--mobile-order": bet.order }
+    ));
+  }
+
+  const totalBet = () => [...state.bets.values()].reduce((sum, amount) => sum + amount, 0);
+
+  // Absolute deadlines avoid accumulating interval drift. This is still local,
+  // not a cross-device shared clock, and suspended tabs may delay transitions.
+  function renderClock() {
+    const remaining = state.paused
+      ? state.pausedRemaining
+      : Math.max(0, state.deadline - performance.now());
+    const seconds = Math.ceil(remaining / 1000);
+    ui.spin.textContent = state.paused ? "Timer paused"
+      : state.phase === "betting" ? `Bets close in ${seconds}s`
+      : state.phase === "spinning" ? `Spinning · ${seconds}s`
+      : `Next round in ${seconds}s`;
+  }
+
+  function tick() {
+    renderClock();
+    if (state.paused || performance.now() < state.deadline) return;
+    if (state.phase === "betting") {
+      void spin();
+    } else if (state.phase === "results") {
+      state.phase = "betting";
+      state.deadline = performance.now() + TIMING.betting;
+      notify("New round: betting open for 20 seconds. Previous bets are not repeated.");
+      render();
+    }
+  }
+
+  function bettingOpen() {
+    // Check the cutoff on clicks as well as timer ticks.
+    if (!state.paused && state.phase === "betting"
+        && performance.now() >= state.deadline) tick();
+    return state.phase === "betting";
+  }
+
+  function togglePause() {
+    if (state.phase !== "betting") return;
+    if (state.paused) {
+      state.deadline = performance.now() + state.pausedRemaining;
+      state.paused = false;
+      notify("Preview timer resumed. Existing bets remain on this round.");
+    } else {
+      const remaining = state.deadline - performance.now();
+      if (remaining <= 0) { tick(); return; }
+      state.pausedRemaining = remaining;
+      state.paused = true;
+      notify("Preview timer paused. You can still place or clear play-chip bets.");
+    }
+    render();
+  }
+
+  function notify(message, error = false) {
+    ui.status.textContent = message;
+    ui.status.classList.toggle("error", error);
+  }
+
+  function shortAmount(amount) {
+    if (amount < 1000) return String(amount);
+    if (amount < 1000000) return `${Math.floor(amount / 100) / 10}k`;
+    return `${Math.floor(amount / 100000) / 10}m`;
+  }
+
+  // Rendering never changes chip balances; those change only in game actions.
+  function render() {
+    const total = totalBet();
+    const locked = state.phase !== "betting";
+    ui.balance.textContent = money(state.balance);
+    ui.total.textContent = money(total);
+    ui.clear.disabled = locked || total === 0;
+    ui.spin.disabled = true; // Display only: nobody manually triggers a round.
+    ui.spin.classList.toggle("busy", state.spinning);
+    ui.pause.disabled = locked;
+    ui.pause.textContent = state.paused ? "Resume" : "Pause";
+    ui.pause.setAttribute("aria-pressed", String(state.paused));
+    ui.wheelState.textContent = state.paused ? "Paused"
+      : state.phase === "betting" ? "Betting open"
+      : state.phase === "spinning" ? "Spinning" : "Results";
+    ui.busted.hidden = state.spinning || state.balance !== 0 || total !== 0;
+    renderClock();
+
+    // Automatically choose an affordable chip after a low-balance result.
+    if (!state.spinning && state.balance > 0 && state.selectedChip > state.balance) {
+      state.selectedChip = [...DENOMINATIONS].reverse().find(value => value <= state.balance);
+    }
+
+    ui.chips.forEach(button => {
+      const value = Number(button.dataset.value);
+      button.disabled = locked || value > state.balance;
+      button.setAttribute("aria-pressed", String(value === state.selectedChip));
+    });
+    ui.chipNote.textContent = `Selected: ${money(state.selectedChip)} ${state.selectedChip === 1 ? "chip" : "chips"}`;
+
+    for (const [id, { button, token }] of buttons) {
+      const bet = definitions.get(id);
+      const amount = state.bets.get(id) || 0;
+      const winningSpot = !state.spinning && state.lastWinner !== null && bet.wins(state.lastWinner);
+      button.disabled = locked;
+      button.classList.toggle("has-bet", amount > 0);
+      button.classList.toggle("winner", winningSpot);
+      token.hidden = amount === 0;
+      token.textContent = shortAmount(amount);
+      button.title = `${bet.name} • pays ${bet.odds}:1 • ${money(amount)} chips placed`;
+      button.setAttribute("aria-label",
+        `Bet on ${bet.name}. Pays ${bet.odds} to 1. ${money(amount)} chips placed.${winningSpot ? " Last winning spot." : ""}`);
+    }
+  }
+
+  function placeBet(id) {
+    if (!bettingOpen() || !definitions.has(id)) return;
+    const amount = state.selectedChip;
+    if (amount > state.balance) {
+      notify(`Not enough chips for a ${money(amount)}-chip bet. Choose a smaller chip or clear your bets.`, true);
+      return;
+    }
+    state.balance -= amount;
+    state.bets.set(id, (state.bets.get(id) || 0) + amount);
+    notify(`${money(amount)} ${amount === 1 ? "chip" : "chips"} placed on ${definitions.get(id).name}. Available: ${money(state.balance)}.`);
+    render();
+  }
+
+  function clearBets() {
+    if (!bettingOpen() || state.bets.size === 0) return;
+    const refund = totalBet();
+    state.balance += refund;
+    state.bets.clear();
+    notify(`${money(refund)} chips returned. Place your next bets.`);
+    render();
+  }
+
+  // Unbiased selection from all 37 pockets using rejection sampling.
+  // Math.random is a compatibility fallback for browsers without Web Crypto.
+  function randomPocket() {
+    if (globalThis.crypto && typeof globalThis.crypto.getRandomValues === "function") {
+      const sample = new Uint32Array(1);
+      const limit = Math.floor(4294967296 / 37) * 37;
+      do { globalThis.crypto.getRandomValues(sample); } while (sample[0] >= limit);
+      return sample[0] % 37;
+    }
+    return Math.floor(Math.random() * 37);
+  }
+
+  // ---------- Canvas wheel: high-DPI rendering and synchronized ball ----------
+  class RouletteWheel {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext("2d");
+      this.size = 300;
+      this.rotation = 0;
+      this.ballAngle = -Math.PI / 2;
+      this.ballRadius = .93;
+      this.resize = this.resize.bind(this);
+
+      if ("ResizeObserver" in window) {
+        this.observer = new ResizeObserver(this.resize);
+        this.observer.observe(canvas);
+      }
+      window.addEventListener("resize", this.resize);
+      this.resize();
+    }
+
+    resize() {
+      this.size = this.canvas.getBoundingClientRect().width || 300;
+      const scale = Math.min(window.devicePixelRatio || 1, 2);
+      this.canvas.width = Math.round(this.size * scale);
+      this.canvas.height = Math.round(this.size * scale);
+      this.ctx.setTransform(
+        this.canvas.width / this.size, 0, 0,
+        this.canvas.height / this.size, 0, 0
+      );
+      this.draw();
+    }
+
+    draw() {
+      const ctx = this.ctx;
+      const size = this.size;
+      const radius = size * .465;
+      const step = TAU / 37;
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(size / 2, size / 2);
+
+      // Brushed-gold rim and outer ball track.
+      const rim = ctx.createRadialGradient(0, 0, radius * .85, 0, 0, radius);
+      rim.addColorStop(0, "#65502b");
+      rim.addColorStop(.5, "#e4c882");
+      rim.addColorStop(.8, "#8b713e");
+      rim.addColorStop(1, "#d6b570");
+      ctx.fillStyle = rim;
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU); ctx.fill();
+
+      ctx.fillStyle = "#131c23";
+      ctx.beginPath(); ctx.arc(0, 0, radius * .955, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#a48b5266";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(0, 0, radius * .925, 0, TAU); ctx.stroke();
+
+      WHEEL_ORDER.forEach((number, index) => {
+        const center = -Math.PI / 2 + index * step + this.rotation;
+        const start = center - step / 2;
+        const end = center + step / 2;
+        const color = colorOf(number);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * .88, start, end);
+        ctx.arc(0, 0, radius * .625, end, start, true);
+        ctx.closePath();
+        ctx.fillStyle = color === "red" ? "#982f40" : color === "green" ? "#187758" : "#19212b";
+        ctx.fill();
+        ctx.strokeStyle = "#efd7a64d";
+        ctx.lineWidth = .8;
+        ctx.stroke();
+
+        if (!state.spinning && state.lastWinner === number) {
+          ctx.strokeStyle = "#ffe5a3";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.translate(Math.cos(center) * radius * .744, Math.sin(center) * radius * .744);
+        ctx.rotate(center + Math.PI / 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `700 ${Math.max(10, radius * .074)}px system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(number), 0, 0);
+        ctx.restore();
+      });
+
+      // Inner bowl and rotating decorative spokes.
+      const bowl = ctx.createRadialGradient(-radius * .16, -radius * .2, 0, 0, 0, radius * .61);
+      bowl.addColorStop(0, "#384632");
+      bowl.addColorStop(.65, "#203329");
+      bowl.addColorStop(1, "#0e2019");
+      ctx.fillStyle = bowl;
+      ctx.beginPath(); ctx.arc(0, 0, radius * .605, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#d3b77388";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, radius * .60, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#d3b77333";
+      ctx.beginPath(); ctx.arc(0, 0, radius * .48, 0, TAU); ctx.stroke();
+
+      for (let i = 0; i < 8; i++) {
+        const angle = this.rotation + i * TAU / 8;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * radius * .34, Math.sin(angle) * radius * .34);
+        ctx.lineTo(Math.cos(angle) * radius * .57, Math.sin(angle) * radius * .57);
+        ctx.stroke();
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#e9c879";
+      ctx.font = `700 ${radius * .078}px system-ui, sans-serif`;
+      ctx.fillText("EUROPEAN", 0, -radius * .14);
+      ctx.font = `800 ${radius * .25}px system-ui, sans-serif`;
+      ctx.fillText("37", 0, radius * .055);
+      ctx.fillStyle = "#b2bdac";
+      ctx.font = `600 ${radius * .057}px system-ui, sans-serif`;
+      ctx.fillText("SINGLE ZERO", 0, radius * .25);
+
+      // The ball finishes at twelve o'clock, inside the winning pocket.
+      const bx = Math.cos(this.ballAngle) * radius * this.ballRadius;
+      const by = Math.sin(this.ballAngle) * radius * this.ballRadius;
+      const ballSize = Math.max(3, radius * .027);
+      ctx.save();
+      ctx.shadowColor = "#000b";
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetY = 2;
+      const ball = ctx.createRadialGradient(bx - ballSize * .3, by - ballSize * .4, 0, bx, by, ballSize);
+      ball.addColorStop(0, "#ffffff");
+      ball.addColorStop(.6, "#f6f0dc");
+      ball.addColorStop(1, "#afa998");
+      ctx.fillStyle = ball;
+      ctx.beginPath(); ctx.arc(bx, by, ballSize, 0, TAU); ctx.fill();
+      ctx.restore();
+      ctx.restore();
+
+      // Fixed pointer: the winning pocket stops directly below this marker.
+      ctx.fillStyle = "#f2d891";
+      ctx.beginPath();
+      ctx.moveTo(size / 2 - size * .024, size * .014);
+      ctx.lineTo(size / 2 + size * .024, size * .014);
+      ctx.lineTo(size / 2, size * .087);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    spin(winner) {
+      const pocketIndex = WHEEL_ORDER.indexOf(winner);
+      const target = mod(-pocketIndex * TAU / 37, TAU);
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (reducedMotion) {
+        // Respect reduced-motion preferences without changing game results.
+        return new Promise(resolve => setTimeout(() => {
+          this.rotation = target;
+          this.ballAngle = -Math.PI / 2;
+          this.ballRadius = .83;
+          this.draw();
+          resolve();
+        }, 350));
+      }
+
+      const startRotation = this.rotation;
+      const endRotation = startRotation + 6 * TAU + mod(target - startRotation, TAU);
+      const startBall = this.ballAngle;
+      const endBall = startBall - 9 * TAU;
+      const duration = TIMING.spinning;
+      const started = performance.now();
+
+      return new Promise(resolve => {
+        const frame = now => {
+          const progress = Math.min(1, (now - started) / duration);
+          this.rotation = startRotation + (endRotation - startRotation) * easeOut(progress);
+          this.ballAngle = startBall + (endBall - startBall) * (1 - Math.pow(1 - progress, 3));
+          const drop = Math.max(0, (progress - .65) / .35);
+          this.ballRadius = .93 - .10 * easeOut(drop);
+          this.draw();
+
+          if (progress < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            // Normalize angles after every spin to avoid accumulated precision loss.
+            this.rotation = target;
+            this.ballAngle = -Math.PI / 2;
+            this.ballRadius = .83;
+            this.draw();
+            resolve();
+          }
+        };
+        requestAnimationFrame(frame);
+      });
+    }
+
+    reset() {
+      this.rotation = 0;
+      this.ballAngle = -Math.PI / 2;
+      this.ballRadius = .93;
+      this.draw();
+      this.canvas.setAttribute("aria-label",
+        "European roulette wheel with 37 pockets and a single zero");
+    }
+  }
+
+  // ---------- Round settlement and result history ----------
+  function renderHistory() {
+    ui.history.replaceChildren();
+    if (state.history.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "history-empty";
+      empty.textContent = "Your first spin starts the story.";
+      ui.history.append(empty);
+      return;
+    }
+    state.history.forEach(entry => {
+      const item = document.createElement("li");
+      item.className = `history-item ${entry.color}`;
+      item.title = `Round ${entry.round}: ${entry.number} ${entry.color}. Net ${signed(entry.net)} chips.`;
+      item.setAttribute("aria-label", item.title);
+      const number = document.createElement("span");
+      number.className = "history-number";
+      number.textContent = entry.number;
+      const color = document.createElement("span");
+      color.className = "history-color";
+      color.textContent = entry.color.toUpperCase();
+      item.append(number, color);
+      ui.history.append(item);
+    });
+  }
+
+  function settleRound(winner, roundBets, stake) {
+    let returned = 0;
+    let winningBets = 0;
+    for (const [id, amount] of roundBets) {
+      const bet = definitions.get(id);
+      if (bet.wins(winner)) {
+        returned += amount * (bet.odds + 1);
+        winningBets++;
+      }
+    }
+
+    const net = returned - stake;
+    const color = colorOf(winner);
+    state.balance += returned;
+    state.bets.clear();
+    state.spinning = false;
+    state.phase = "results";
+    state.deadline = performance.now() + TIMING.results;
+    state.lastWinner = winner;
+    state.round++;
+    state.history.unshift({ number: winner, color, net, round: state.round });
+    state.history = state.history.slice(0, 5);
+
+    ui.pocket.className = `result-pocket ${color}`;
+    ui.number.textContent = winner;
+    ui.color.textContent = color.toUpperCase();
+    ui.resultTitle.textContent = stake === 0 ? "You watched this round"
+      : returned > 0
+      ? `${winningBets} winning ${winningBets === 1 ? "bet" : "bets"} paid`
+      : "No winning bets this round";
+    ui.resultDetail.textContent = `Returned ${money(returned)} · Net ${signed(net)} chips`;
+    ui.resultDetail.className = net > 0 ? "positive" : net < 0 ? "negative" : "";
+
+    let message = `${winner} ${color}. ${money(returned)} chips returned; net ${signed(net)}. Balance: ${money(state.balance)}.`;
+    if (state.balance === 0) message += " Out of chips — reset to play again.";
+    else message += " Next betting window opens in 5 seconds.";
+    notify(message);
+
+    wheel.canvas.setAttribute("aria-label",
+      `Roulette wheel stopped on ${winner}, ${color}. Ball is in the winning pocket.`);
+    renderHistory();
+    render();
+    wheel.draw();
+  }
+
+  async function spin() {
+    if (state.phase !== "betting" || state.spinning || state.paused) return;
+
+    // The table spins even if this player placed no bets. No bets are repeated.
+    const roundBets = new Map(state.bets);
+    const stake = totalBet();
+    const winner = randomPocket();
+    state.spinning = true;
+    state.phase = "spinning";
+    state.deadline = performance.now() + TIMING.spinning;
+    render();
+    notify(`No more bets. Spinning with ${money(stake)} chips on the table.`);
+    ui.resultTitle.textContent = "The wheel is spinning…";
+    ui.resultDetail.textContent = "Betting is closed until the next round.";
+    ui.resultDetail.className = "";
+    ui.pocket.className = "result-pocket";
+    ui.number.textContent = "…";
+    ui.color.textContent = "ROLLING";
+
+    // Keep the same round duration with reduced-motion preferences.
+    // This offline preview settles locally. The online package settles on
+    // the server independently of any browser animation or connection.
+    await Promise.all([
+      wheel.spin(winner),
+      new Promise(resolve => setTimeout(resolve, TIMING.spinning))
+    ]);
+    settleRound(winner, roundBets, stake);
+  }
+
+  function resetGame() {
+    // A reset is available only after all chips are lost, never during a round.
+    if (state.spinning || state.balance !== 0 || state.bets.size !== 0) return;
+    state.balance = INITIAL_BALANCE;
+    state.selectedChip = 10;
+    state.lastWinner = null;
+    state.history = [];
+    state.round = 0;
+    state.bets.clear();
+    state.phase = "betting";
+    state.deadline = performance.now() + TIMING.betting;
+    state.paused = false;
+    state.pausedRemaining = TIMING.betting;
+    ui.pocket.className = "result-pocket";
+    ui.number.textContent = "—";
+    ui.color.textContent = "READY";
+    ui.resultTitle.textContent = "A fresh start.";
+    ui.resultDetail.textContent = "1,000 play-chips. Make them count.";
+    ui.resultDetail.className = "";
+    notify("Balance reset to 1,000 chips. Select a chip and place your bets.");
+    renderHistory();
+    render();
+    wheel.reset();
+    ui.chips.find(button => Number(button.dataset.value) === 10).focus();
+  }
+
+  // ---------- Initialization and native mouse / touch / keyboard controls ----------
+  buildBoard();
+  const wheel = new RouletteWheel($("wheel"));
+
+  ui.board.addEventListener("click", event => {
+    const button = event.target.closest("button[data-bet]");
+    if (button && ui.board.contains(button)) placeBet(button.dataset.bet);
+  });
+  ui.chips.forEach(button => button.addEventListener("click", () => {
+    if (!bettingOpen() || button.disabled) return;
+    state.selectedChip = Number(button.dataset.value);
+    notify(`${money(state.selectedChip)}-chip denomination selected. Tap a betting spot.`);
+    render();
+  }));
+  ui.clear.addEventListener("click", clearBets);
+  ui.pause.addEventListener("click", togglePause);
+  ui.reset.addEventListener("click", resetGame);
+  setInterval(tick, 100);
+  document.addEventListener("visibilitychange", tick);
+  render();
+})();
+</script>
+</body>
+</html>
